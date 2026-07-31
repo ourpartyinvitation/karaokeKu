@@ -76,9 +76,14 @@
         <div class="flex-1 p-2 lg:p-4 flex flex-col justify-center relative mt-8 lg:mt-10">
             <video id="localPlayer" class="w-full h-full max-h-full object-contain bg-black rounded lg:shadow-2xl transition-opacity" crossorigin="anonymous" controlsList="nodownload"></video>
             
-            <div id="ytWrapper" class="hidden w-full h-80 max-h-full bg-black rounded lg:shadow-2xl overflow-hidden relative">
+            <!-- Pembungkus (Wrapper) YouTube Iframe API -->
+            <div id="ytWrapper" class="hidden w-full h-full max-h-full bg-black rounded shadow-2xl overflow-hidden relative">
+                <!-- Elemen div ini akan digantikan oleh YouTube menjadi tag <iframe> -->
                 <div id="ytPlayerContainer"></div>
-                <div class="absolute inset-0 bg-transparent z-50"></div>
+                
+                <!-- PENTING: Lapisan Ghaib (absolute transparan) diubah dari inset-0 menjadi bottom-14 -->
+                <!-- Ini membuat area utama video tetap aman dari klik, namun bagian bawah selebar 14 unit (±56px) dibiarkan terbuka agar tombol "Next" atau iklan bisa diklik -->
+                <div class="absolute top-0 left-0 right-0 bottom-16 bg-transparent z-50"></div>
             </div>
         </div>
 
