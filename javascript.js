@@ -22,43 +22,34 @@ let audioInitialized = false;
 let ytPlayer; 
 
 // =====================================================================
-// 2. FUNGSI FILE LOKAL (Ganti PHP dengan Pembacaan Folder Klien)
+// 2. FUNGSI FILE LOKAL (Membaca Folder Klien)
 // =====================================================================
-
 window.onload = () => {
     fetchYtSaved(); // Memuat localStorage saat halaman terbuka
 };
 
 // Mengambil file saat user menekan "Pilih Folder Komputer"
 folderInput.addEventListener('change', (e) => {
-    // Tarik daftar antrean file dari sistem PC pengguna
     const files = Array.from(e.target.files);
-    allLocalSongs = []; // Kosongkan daftar lawas
+    allLocalSongs = []; 
     
-    // Periksa dan daftarkan satu per satu
     files.forEach(file => {
-        // Hanya izinkan format media
         if (file.type.startsWith('video/') || file.type.startsWith('audio/') || file.name.endsWith('.mkv') || file.name.endsWith('.mp4') || file.name.endsWith('.dat')) {
-            
-            // Hapus ekstensi .mp4/.mp3 dari ujung judulnya
             const nameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.'));
             const parts = nameWithoutExt.split('-');
             
-            // Memecah teks format penyanyi dan judul
             const title = parts[0] ? parts[0].trim() : 'Unknown';
             const singer = parts[1] ? parts[1].trim() : 'Unknown';
 
-            // Masukkan menjadi array
             allLocalSongs.push({
                 title: title,
                 singer: singer,
                 source: 'local',
-                fileObj: file // KUNCI UTAMA: Kita menyimpan Object File-nya, bukan sekadar teks, agar bisa diputar browser
+                fileObj: file 
             });
         }
     });
     
-    // Tampilkan di layar daftar lagu yang sudah dimuat
     renderSongList(allLocalSongs);
 });
 
@@ -84,13 +75,12 @@ function renderSongList(songs) {
         const div = document.createElement('div');
         div.className = "bg-gray-700 hover:bg-gray-600 rounded p-3 mb-2 flex justify-between items-center transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 cursor-pointer";
         
-        // Kita menitipkan index pada fungsi onclick agar object File tidak error diserialisasi
         div.innerHTML = `
             <div class="overflow-hidden">
-                <div class="font-bold text-sm truncate">${song.title}</div>
+                <div class="font-bold text-sm lg:text-base truncate">${song.title}</div>
                 <div class="text-xs text-gray-400 truncate">${song.singer}</div>
             </div>
-            <button class="bg-indigo-500 hover:bg-indigo-400 text-white text-xs px-3 py-1.5 rounded shadow hover:scale-105 transition-transform duration-200" onclick='addToPlaylistByIndex(${index})'>
+            <button class="bg-indigo-500 hover:bg-indigo-400 text-white text-xs px-3 py-1.5 rounded shadow hover:scale-105 transition-transform duration-200 shrink-0 ml-2" onclick='addToPlaylistByIndex(${index})'>
                 + Add
             </button>
         `;
@@ -98,28 +88,21 @@ function renderSongList(songs) {
     });
 }
 
-// Fungsi bantu mengambil array mentah masuk ke Playlist
 function addToPlaylistByIndex(globalIndex) {
     const selectedSong = allLocalSongs[globalIndex];
     addToPlaylist(selectedSong);
 }
 
-
 // =====================================================================
-// 3. FUNGSI YOUTUBE (Ganti PHP TXT dengan LOCALSTORAGE BROWSER)
+// 3. FUNGSI YOUTUBE (LOCALSTORAGE BROWSER)
 // =====================================================================
-
-// Membaca Data History Browser
 function fetchYtSaved() {
-    // Tarik data kuncian 'ytHistory' dari browser. Jika kosong, sediakan array []
     const saved = JSON.parse(localStorage.getItem('ytHistory')) || [];
     renderYtSavedList(saved);
 }
 
-// Melukis riwayat YT ke Layar
 function renderYtSavedList(songs) {
     ytListContainer.innerHTML = ''; 
-    
     if (songs.length === 0) {
         ytListContainer.innerHTML = `<div class="text-gray-500 text-center text-xs mt-2">Belum ada riwayat.</div>`;
         return;
@@ -132,10 +115,10 @@ function renderYtSavedList(songs) {
         
         div.innerHTML = `
             <div class="overflow-hidden flex-1 cursor-pointer" title="${song.title}">
-                <div class="font-bold text-sm truncate text-indigo-300">${song.title}</div>
-                <div class="text-xs text-gray-400 truncate">YT-ID: ${song.videoId}</div>
+                <div class="font-bold text-sm lg:text-base truncate text-indigo-300">${song.title}</div>
+                <div class="text-[10px] lg:text-xs text-gray-400 truncate">YT-ID: ${song.videoId}</div>
             </div>
-            <div class="flex gap-1 ml-2">
+            <div class="flex gap-1 ml-2 shrink-0">
                 <button title="Hapus Riwayat" class="bg-red-800 hover:bg-red-600 text-white text-xs px-2.5 py-1 rounded shadow hover:scale-110 transition-transform duration-200" onclick="deleteYtHistory('${song.videoId}')">
                     🗑️
                 </button>
@@ -148,7 +131,6 @@ function renderYtSavedList(songs) {
     });
 }
 
-// Menyimpan ke LocalStorage (Pengganti PHP)
 function saveAndAddYoutube() {
     const title = document.getElementById('ytTitleInput').value.trim(); 
     const url = document.getElementById('ytLinkInput').value.trim();    
@@ -159,58 +141,36 @@ function saveAndAddYoutube() {
         return; 
     }
 
-    // 1. Ambil memori saat ini
     let saved = JSON.parse(localStorage.getItem('ytHistory')) || [];
-    
-    // 2. Tambahkan data baru
     saved.push({ title: title, videoId: videoId });
-    
-    // 3. Simpan permanen kembali ke browser (diubah ke string JSON)
     localStorage.setItem('ytHistory', JSON.stringify(saved));
     
-    // 4. Masukkan ke Antrean Lagu Sekarang juga
     addFromYtHistory(title, videoId);
     
-    // 5. Bersihkan form & segarkan layar 
     document.getElementById('ytTitleInput').value = '';
     document.getElementById('ytLinkInput').value = '';
     fetchYtSaved();
 }
 
-// Menghapus Data dari LocalStorage
 function deleteYtHistory(videoId) {
     showConfirm("Apakah Anda yakin ingin menghapus lagu ini dari riwayat permanen?", () => {
         let saved = JSON.parse(localStorage.getItem('ytHistory')) || [];
-        
-        // Filter out (Buang) array yang memiliki videoId tersebut
         saved = saved.filter(song => song.videoId !== videoId);
-        
-        // Timpa hasil filteran yang bersih ke memori browser
         localStorage.setItem('ytHistory', JSON.stringify(saved));
-        
-        // Refresh layar
         fetchYtSaved();
     });
 }
 
-// Menemukan ID Link YT
 function extractVideoID(url) {
     const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
     const match = url.match(regex);
     return match ? match[1] : null; 
 }
 
-// Menambah ke Playlist
 function addFromYtHistory(title, videoId) {
-    addToPlaylist({
-        title: title,            
-        singer: "YouTube Video", 
-        filename: videoId,       
-        source: 'youtube'        
-    });
+    addToPlaylist({ title: title, singer: "YouTube Video", filename: videoId, source: 'youtube' });
 }
 
-// Tab Switch
 function switchSource(source) {
     currentSourceTab = source; 
     const btnLocal = document.getElementById('btnLocal');
@@ -236,7 +196,6 @@ function switchSource(source) {
     }
 }
 
-
 // =====================================================================
 // 4. KUMPULAN MODAL POPUP
 // =====================================================================
@@ -245,16 +204,12 @@ function showAlert(message) {
     const box = document.getElementById('customAlertBox');    
     document.getElementById('customAlertMsg').innerText = message; 
     modal.classList.remove('hidden'); 
-    setTimeout(() => {
-        modal.classList.remove('opacity-0'); 
-        box.classList.remove('scale-95');    
-    }, 10);
+    setTimeout(() => { modal.classList.remove('opacity-0'); box.classList.remove('scale-95'); }, 10);
 }
 function closeAlert() {
     const modal = document.getElementById('customAlert');
     const box = document.getElementById('customAlertBox');
-    modal.classList.add('opacity-0');
-    box.classList.add('scale-95');
+    modal.classList.add('opacity-0'); box.classList.add('scale-95');
     setTimeout(() => { modal.classList.add('hidden'); }, 300);
 }
 
@@ -265,10 +220,7 @@ function showConfirm(message, callback) {
     const box = document.getElementById('customConfirmBox');
     document.getElementById('customConfirmMsg').innerText = message; 
     modal.classList.remove('hidden');
-    setTimeout(() => {
-        modal.classList.remove('opacity-0');
-        box.classList.remove('scale-95');
-    }, 10);
+    setTimeout(() => { modal.classList.remove('opacity-0'); box.classList.remove('scale-95'); }, 10);
 }
 document.getElementById('btnConfirmCancel').onclick = function() { closeConfirm(); };
 document.getElementById('btnConfirmOk').onclick = function() {
@@ -278,8 +230,7 @@ document.getElementById('btnConfirmOk').onclick = function() {
 function closeConfirm() {
     const modal = document.getElementById('customConfirm');
     const box = document.getElementById('customConfirmBox');
-    modal.classList.add('opacity-0');
-    box.classList.add('scale-95');
+    modal.classList.add('opacity-0'); box.classList.add('scale-95');
     setTimeout(() => modal.classList.add('hidden'), 300);
 }
 
@@ -318,9 +269,11 @@ function renderPlaylist() {
     playlist.forEach((song, index) => {
         const div = document.createElement('div');
         const isActive = index === 0 ? 'bg-indigo-800 border-indigo-400 transform scale-[1.01] shadow-md z-10' : 'bg-gray-700 hover:-translate-y-0.5 hover:shadow-md';
-        div.className = `playlist-item ${isActive} border rounded p-3 mb-2 flex justify-between items-center transition-all duration-300`;
+        div.className = `playlist-item ${isActive} border rounded p-2.5 lg:p-3 mb-2 flex justify-between items-center transition-all duration-300`;
         div.draggable = true;
         div.dataset.index = index; 
+        
+        // Event Drag and Drop (Catatan: Dukungan native HTML5 Drag and Drop pada layar sentuh/Mobile mungkin terbatas tanpa polyfill tambahan, namun mouse desktop berjalan lancar)
         div.addEventListener('dragstart', handleDragStart);
         div.addEventListener('dragover', handleDragOver);
         div.addEventListener('drop', handleDrop);
@@ -328,10 +281,10 @@ function renderPlaylist() {
 
         div.innerHTML = `
             <div class="overflow-hidden cursor-grab flex-1" onclick="playSong(${index})">
-                <div class="font-bold text-sm truncate">${index + 1}. ${song.title}</div>
-                <div class="text-xs text-gray-400 truncate">${song.singer} ${song.source === 'youtube' ? '📺' : '📁'}</div>
+                <div class="font-bold text-sm lg:text-base truncate">${index + 1}. ${song.title}</div>
+                <div class="text-[10px] lg:text-xs text-gray-400 truncate">${song.singer} ${song.source === 'youtube' ? '📺' : '📁'}</div>
             </div>
-            <button class="text-red-400 hover:text-red-200 hover:scale-125 transition-transform duration-200 ml-2 font-bold px-2 text-lg" onclick="removeFromPlaylist(${index})">×</button>
+            <button class="text-red-400 hover:text-red-200 hover:scale-125 transition-transform duration-200 ml-2 font-bold px-2 text-lg shrink-0" onclick="removeFromPlaylist(${index})">×</button>
         `;
         playlistContainer.appendChild(div);
     });
@@ -339,10 +292,7 @@ function renderPlaylist() {
 
 function removeFromPlaylist(index) {
     playlist.splice(index, 1); 
-    if (index === 0) {
-        stopAllPlayers(); 
-        if (playlist.length > 0) playSong(0); 
-    }
+    if (index === 0) { stopAllPlayers(); if (playlist.length > 0) playSong(0); }
     renderPlaylist(); 
 }
 
@@ -361,14 +311,12 @@ function handleDrop(e) {
     if (draggedItemIndex === targetIndex) return; 
     const itemToMove = playlist.splice(draggedItemIndex, 1)[0]; 
     playlist.splice(targetIndex, 0, itemToMove); 
-    if (draggedItemIndex == 0 || targetIndex == 0) playSong(0); 
-    else renderPlaylist(); 
+    if (draggedItemIndex == 0 || targetIndex == 0) playSong(0); else renderPlaylist(); 
 }
 function handleDragEnd(e) { this.classList.remove('dragging'); } 
 
-
 // =====================================================================
-// 6. MESIN PENGOLAH SINYAL SUARA API (VOCAL REMOVER & PLAYER)
+// 6. MESIN PENGOLAH SINYAL SUARA API
 // =====================================================================
 function initAudio() {
     if (audioInitialized) return; 
@@ -384,49 +332,33 @@ function initAudio() {
     busGain = audioCtx.createGain(); 
     inverter = audioCtx.createGain(); inverter.gain.value = -1; 
 
-    mediaSource.connect(eqBass);
-    eqBass.connect(eqMid);
-    eqMid.connect(eqTreble);
-    eqTreble.connect(splitter);
+    mediaSource.connect(eqBass); eqBass.connect(eqMid); eqMid.connect(eqTreble); eqTreble.connect(splitter);
     
     audioInitialized = true; 
     changeVocalMode(); 
 }
 
 function playSong(index) {
-    if (playlist.length === 0) {
-        stopAllPlayers();
-        return; 
-    }
-    
-    if (index !== 0) {
-        const selected = playlist.splice(index, 1)[0];
-        playlist.unshift(selected); 
-    }
+    if (playlist.length === 0) { stopAllPlayers(); return; }
+    if (index !== 0) { const selected = playlist.splice(index, 1)[0]; playlist.unshift(selected); }
     
     const song = playlist[0]; 
     nowPlayingTitle.innerText = `${song.title} - ${song.singer}`; 
     renderPlaylist(); 
 
     if (song.source === 'local') {
-        localPlayer.classList.remove('hidden');
-        ytWrapper.classList.add('hidden'); 
+        localPlayer.classList.remove('hidden'); ytWrapper.classList.add('hidden'); 
         if(ytPlayer && typeof ytPlayer.stopVideo === 'function') ytPlayer.stopVideo();
 
-        // MENGONVERSI OBJECT FILE MENJADI URL SEMENTARA (Blob URL)
-        // Hal ini menggantikan file .mp4 dari server php sebelumnya, kini browser membaca langsung memory RAM.
         const fileURL = URL.createObjectURL(song.fileObj);
         localPlayer.src = fileURL;
         
         if (!audioInitialized) initAudio();
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-        
         localPlayer.play();
     } 
     else if (song.source === 'youtube') {
-        localPlayer.classList.add('hidden');
-        localPlayer.pause();
-        ytWrapper.classList.remove('hidden');
+        localPlayer.classList.add('hidden'); localPlayer.pause(); ytWrapper.classList.remove('hidden');
 
         if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
             ytPlayer.loadVideoById(song.filename);
@@ -446,8 +378,7 @@ localPlayer.addEventListener('ended', () => { nextSong(); });
 function nextSong() {
     if (playlist.length > 0) {
         playlist.shift(); 
-        if (playlist.length > 0) { playSong(0); } 
-        else { stopAllPlayers(); renderPlaylist(); }
+        if (playlist.length > 0) { playSong(0); } else { stopAllPlayers(); renderPlaylist(); }
     }
 }
 
@@ -455,13 +386,11 @@ function togglePlay() {
     if (playlist.length === 0) return; 
     const song = playlist[0]; 
     if (song.source === 'local') {
-        if (localPlayer.paused) { localPlayer.play(); if (audioCtx.state === 'suspended') audioCtx.resume(); } 
-        else { localPlayer.pause(); }
+        if (localPlayer.paused) { localPlayer.play(); if (audioCtx.state === 'suspended') audioCtx.resume(); } else { localPlayer.pause(); }
     } else {
         if (ytPlayer) {
             const state = ytPlayer.getPlayerState(); 
-            if (state === 1) ytPlayer.pauseVideo(); 
-            else ytPlayer.playVideo(); 
+            if (state === 1) ytPlayer.pauseVideo(); else ytPlayer.playVideo(); 
         }
     }
 }
@@ -483,31 +412,19 @@ function changeVocalMode() {
     if (!audioInitialized) return; 
     const mode = document.getElementById('vocalMode').value;
     
-    splitter.disconnect();
-    inverter.disconnect();
-    busGain.disconnect();
+    splitter.disconnect(); inverter.disconnect(); busGain.disconnect();
     
     if (mode === 'remove_center') {
-        splitter.connect(busGain, 0); 
-        splitter.connect(inverter, 1); 
-        inverter.connect(busGain); 
-        busGain.connect(merger, 0, 0);
-        busGain.connect(merger, 0, 1);
-        merger.connect(audioCtx.destination);
+        splitter.connect(busGain, 0); splitter.connect(inverter, 1); inverter.connect(busGain); 
+        busGain.connect(merger, 0, 0); busGain.connect(merger, 0, 1); merger.connect(audioCtx.destination);
     }
     else if (mode === 'left') {
-        splitter.connect(merger, 0, 0); 
-        splitter.connect(merger, 0, 1);
-        merger.connect(audioCtx.destination);
+        splitter.connect(merger, 0, 0); splitter.connect(merger, 0, 1); merger.connect(audioCtx.destination);
     } 
     else if (mode === 'right') {
-        splitter.connect(merger, 1, 0); 
-        splitter.connect(merger, 1, 1);
-        merger.connect(audioCtx.destination);
+        splitter.connect(merger, 1, 0); splitter.connect(merger, 1, 1); merger.connect(audioCtx.destination);
     } 
     else {
-        splitter.connect(merger, 0, 0); 
-        splitter.connect(merger, 1, 1);
-        merger.connect(audioCtx.destination);
+        splitter.connect(merger, 0, 0); splitter.connect(merger, 1, 1); merger.connect(audioCtx.destination);
     }
 }
