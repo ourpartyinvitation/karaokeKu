@@ -7,6 +7,7 @@ let currentIndex = 0;
 let currentSourceTab = 'local'; 
 
 const searchInput = document.getElementById('searchInput');
+const searchYtInput = document.getElementById('searchYtInput'); // Deklarasi input pencarian YT
 const songList = document.getElementById('songList');
 const ytSavedList = document.getElementById('ytSavedList');
 const ytListContainer = document.getElementById('ytListContainer');
@@ -94,17 +95,45 @@ function addToPlaylistByIndex(globalIndex) {
 }
 
 // =====================================================================
-// 3. FUNGSI YOUTUBE (LOCALSTORAGE BROWSER)
+// 3. FUNGSI YOUTUBE (LOCALSTORAGE BROWSER) & PENCARIAN YOUTUBE
 // =====================================================================
+
+// Fitur Filter/Pencarian Data Riwayat YouTube
+searchYtInput.addEventListener('keyup', (e) => {
+    const keyword = e.target.value.toLowerCase();
+    const saved = JSON.parse(localStorage.getItem('ytHistory')) || [];
+    
+    // Filter array history yt berdasarkan inputan user (Bisa cari Judul atau ID)
+    const filteredYt = saved.filter(song => 
+        song.title.toLowerCase().includes(keyword) || 
+        song.videoId.toLowerCase().includes(keyword)
+    );
+    renderYtSavedList(filteredYt);
+});
+
+// Membaca dan Memfilter Data History Browser
 function fetchYtSaved() {
     const saved = JSON.parse(localStorage.getItem('ytHistory')) || [];
-    renderYtSavedList(saved);
+    const keyword = searchYtInput.value.toLowerCase();
+    
+    // Cek apakah user sedang melakukan pencarian? Jika ya, pertahankan filter tersebut walau baru di-refresh
+    if (keyword !== '') {
+        const filteredYt = saved.filter(song => 
+            song.title.toLowerCase().includes(keyword) || 
+            song.videoId.toLowerCase().includes(keyword)
+        );
+        renderYtSavedList(filteredYt);
+    } else {
+        // Jika kolom pencarian kosong, tampilkan semua history
+        renderYtSavedList(saved);
+    }
 }
 
+// Melukis HTML riwayat YT
 function renderYtSavedList(songs) {
     ytListContainer.innerHTML = ''; 
     if (songs.length === 0) {
-        ytListContainer.innerHTML = `<div class="text-gray-500 text-center text-xs mt-2">Belum ada riwayat.</div>`;
+        ytListContainer.innerHTML = `<div class="text-gray-500 text-center text-xs mt-2">Tidak ditemukan / Belum ada riwayat.</div>`;
         return;
     }
     
@@ -273,7 +302,6 @@ function renderPlaylist() {
         div.draggable = true;
         div.dataset.index = index; 
         
-        // Event Drag and Drop (Catatan: Dukungan native HTML5 Drag and Drop pada layar sentuh/Mobile mungkin terbatas tanpa polyfill tambahan, namun mouse desktop berjalan lancar)
         div.addEventListener('dragstart', handleDragStart);
         div.addEventListener('dragover', handleDragOver);
         div.addEventListener('drop', handleDrop);
