@@ -5,21 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KaraokeKu - Web Karaoke Player</title>
     
-    <!-- Favicon Vektor Kustom (Warna Indigo) -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'%3E%3Cpath d='M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z'/%3E%3C/svg%3E">
 
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .dragging { opacity: 0.5; border: 2px dashed #6366f1; }
         .playlist-item { cursor: grab; }
         .playlist-item:active { cursor: grabbing; }
-        #centerPanel:fullscreen {
-            background-color: #000 !important;
-            padding: 0 !important;
-            display: flex;
-            flex-direction: column;
-        }
+        #centerPanel:fullscreen { background-color: #000 !important; padding: 0 !important; display: flex; flex-direction: column; }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #1f2937; }
         ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
@@ -30,16 +23,18 @@
 
     <!-- ================= PANEL KIRI ================= -->
     <div id="leftPanel" class="order-2 lg:order-1 w-full lg:w-1/4 bg-gray-800 flex flex-col border-b lg:border-b-0 lg:border-r border-gray-700 h-[50vh] lg:h-auto">
-        <div class="p-4 border-b border-gray-700 shrink-0">
+        <div class="p-3 lg:p-4 border-b border-gray-700 shrink-0">
             <h1 class="text-xl lg:text-2xl font-bold text-indigo-400 mb-3 lg:mb-4">🎤 KaraokeKu</h1>
             
-            <div class="flex gap-2 mb-3 lg:mb-4">
-                <button id="btnLocal" class="flex-1 bg-indigo-600 hover:bg-indigo-500 transition-colors py-1.5 lg:py-1 rounded text-sm font-semibold shadow-md" onclick="switchSource('local')">Lokal</button>
-                <button id="btnYT" class="flex-1 bg-gray-700 hover:bg-gray-600 transition-colors py-1.5 lg:py-1 rounded text-sm font-semibold shadow-md" onclick="switchSource('youtube')">YouTube</button>
+            <!-- Tiga Tombol Tab -->
+            <div class="flex gap-1 lg:gap-2 mb-3 lg:mb-4">
+                <button id="btnLocal" class="flex-1 bg-indigo-600 hover:bg-indigo-500 transition-colors py-1.5 lg:py-1 rounded text-[11px] lg:text-sm font-semibold shadow-md" onclick="switchSource('local')">Lokal</button>
+                <button id="btnYT" class="flex-1 bg-gray-700 hover:bg-gray-600 transition-colors py-1.5 lg:py-1 rounded text-[11px] lg:text-sm font-semibold shadow-md" onclick="switchSource('youtube')">YouTube</button>
+                <button id="btnGeneral" class="flex-1 bg-gray-700 hover:bg-gray-600 transition-colors py-1.5 lg:py-1 rounded text-[11px] lg:text-sm font-semibold shadow-md" onclick="switchSource('general')">General</button>
             </div>
 
-            <!-- Tab Lokal -->
-            <div id="localInputContainer" class="flex flex-col gap-2 mb-2">
+            <!-- Header: Tab Lokal -->
+            <div id="localInputContainer" class="flex flex-col gap-2 mb-1">
                 <input type="file" id="folderInput" webkitdirectory directory multiple accept="video/*,audio/*" class="hidden">
                 <button onclick="document.getElementById('folderInput').click()" class="w-full bg-green-600 hover:bg-green-500 transition-colors shadow-md py-2 rounded text-sm font-bold">
                     📁 Pilih Folder Komputer
@@ -47,24 +42,40 @@
                 <input type="text" id="searchInput" placeholder="Cari Judul / Penyanyi..." class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition-colors mt-1">
             </div>
             
-            <!-- Tab YouTube -->
-            <div id="ytInputContainer" class="hidden flex-col gap-2 mb-2">
+            <!-- Header: Tab YouTube -->
+            <div id="ytInputContainer" class="hidden flex-col gap-2 mb-1">
                 <input type="text" id="ytTitleInput" placeholder="Contoh: Dewa 19 - Kangen" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none transition-colors">
                 <input type="text" id="ytLinkInput" placeholder="Paste Link URL YouTube..." class="w-full bg-gray-900 border border-red-600 rounded px-3 py-2 text-sm focus:outline-none transition-colors">
                 <button onclick="saveAndAddYoutube()" class="w-full bg-red-600 hover:bg-red-500 transition-colors shadow-md py-2 rounded text-sm font-bold">Simpan & Tambah ke Playlist</button>
-                
-                <!-- FITUR BARU: Input Pencarian Riwayat YouTube -->
                 <input type="text" id="searchYtInput" placeholder="Cari Riwayat Judul / Link..." class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:border-red-500 transition-colors mt-1">
+            </div>
+
+            <!-- Header: Tab General (Google Sheets) -->
+            <div id="generalInputContainer" class="hidden flex-col gap-2 mb-1">
+                <button onclick="fetchGeneralSongs()" class="w-full bg-blue-600 hover:bg-blue-500 transition-colors shadow-md py-2 rounded text-sm font-bold flex justify-center items-center gap-2">
+                    🔄 Sync Spreadsheet
+                </button>
+                <input type="text" id="searchGeneralInput" placeholder="Cari Lagu Online..." class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 transition-colors mt-1">
             </div>
         </div>
 
+        <!-- Body List: Lokal -->
         <div class="flex-1 overflow-y-auto p-2" id="songList">
-            <div class="text-center text-gray-500 text-sm mt-10">Klik "Pilih Folder" untuk memuat lagu lokal Anda.</div>
+            <div class="text-center text-gray-500 text-sm mt-10">Klik "Pilih Folder" untuk memuat lagu lokal.</div>
         </div>
 
-        <div id="ytSavedList" class="hidden flex-1 flex-col overflow-y-auto p-2 border-t border-gray-700 bg-gray-850">
+        <!-- Body List: YouTube -->
+        <div id="ytSavedList" class="hidden flex-1 flex-col overflow-y-auto p-2 bg-gray-850">
             <div class="text-xs text-gray-400 font-bold mb-3 mt-1 px-1">📋 Riwayat Link Tersimpan:</div>
             <div id="ytListContainer" class="flex flex-col gap-2"></div>
+        </div>
+
+        <!-- Body List: General -->
+        <div id="generalSavedList" class="hidden flex-1 flex-col overflow-y-auto p-2 bg-gray-850">
+            <div class="text-xs text-gray-400 font-bold mb-3 mt-1 px-1">☁️ Database Spreadsheet:</div>
+            <div id="generalListContainer" class="flex flex-col gap-2">
+                <div class="text-center text-gray-500 text-sm mt-5">Klik Sync untuk memuat data.</div>
+            </div>
         </div>
     </div>
 
@@ -76,11 +87,9 @@
 
         <div class="flex-1 p-2 lg:p-4 flex flex-col justify-center relative mt-8 lg:mt-10">
             <video id="localPlayer" class="w-full h-full max-h-full object-contain bg-black rounded lg:shadow-2xl transition-opacity" crossorigin="anonymous" controlsList="nodownload"></video>
-            
             <div id="ytWrapper" class="hidden w-full h-full max-h-full bg-black rounded lg:shadow-2xl overflow-hidden relative">
                 <div id="ytPlayerContainer"></div>
-                <!-- Layer transparan yg membiarkan bagian bawah terbuka agar bisa klik Next iklan -->
-                <div class="absolute top-0 left-0 right-0 bottom-8 bg-transparent z-50"></div>
+                <div class="absolute top-0 left-0 right-0 bottom-14 bg-transparent z-50"></div>
             </div>
         </div>
 
@@ -89,14 +98,12 @@
                 <button onclick="toggleFullScreen()" class="bg-blue-600 hover:bg-blue-500 hover:scale-105 transition-all px-3 py-1.5 lg:px-4 lg:py-2 rounded font-bold text-xs lg:text-sm">🔲 Penuh</button>
                 <button onclick="togglePlay()" class="bg-indigo-600 hover:bg-indigo-500 hover:scale-105 transition-all px-4 py-1.5 lg:px-6 lg:py-2 rounded-full font-bold text-xs lg:text-sm">⏯ Jeda/Main</button>
                 <button onclick="nextSong()" class="bg-gray-600 hover:bg-gray-500 hover:scale-105 transition-all px-3 py-1.5 lg:px-4 lg:py-2 rounded-full font-bold text-xs lg:text-sm">⏭ Next</button>
-                
                 <select id="vocalMode" class="bg-gray-900 border border-gray-600 rounded px-2 py-1.5 lg:px-3 lg:py-2 text-xs lg:text-sm outline-none transition-colors max-w-[140px] lg:max-w-none" onchange="changeVocalMode()">
-                    <option value="stereo">Vokal: Normal (Stereo)</option>
-                    <option value="remove_center">Vokal: Hapus Penuh (Mode MP3/MP4 Biasa)</option>
-                    <option value="left">Vokal: Matikan (Mode Karaoke - Kiri)</option>
-                    <option value="right">Vokal: Matikan (Mode Karaoke - Kanan)</option>
+                    <option value="stereo">Normal (Stereo)</option>
+                    <option value="remove_center">Hapus (MP3/MP4)</option>
+                    <option value="left">Karaoke (Kiri)</option>
+                    <option value="right">Karaoke (Kanan)</option>
                 </select>
-
                 <div class="flex items-center gap-1 lg:gap-2">
                     <span class="text-xs">🔈</span>
                     <input type="range" id="volumeControl" min="0" max="1" step="0.1" value="1" oninput="changeVolume()" class="w-16 lg:w-20 cursor-pointer">
@@ -105,7 +112,7 @@
         </div>
     </div>
 
-    <!-- ================= PANEL KANAN (EQ & Playlist) ================= -->
+    <!-- ================= PANEL KANAN (EQ & PLAYLIST) ================= -->
     <div id="rightPanel" class="order-3 w-full lg:w-1/4 bg-gray-800 flex flex-col border-t lg:border-t-0 lg:border-l border-gray-700 h-[50vh] lg:h-auto">
         <div class="p-3 lg:p-4 border-b border-gray-700 bg-gray-850 shrink-0">
             <h3 class="font-bold text-xs lg:text-sm text-gray-300 mb-2 lg:mb-3">🎛 Pengaturan Audio (Lokal)</h3>
@@ -124,18 +131,16 @@
                 </div>
             </div>
         </div>
-
         <div class="p-3 lg:p-4 border-b border-gray-700 shrink-0">
             <h3 class="font-bold text-sm lg:text-base text-indigo-400">📋 Daftar Playlist</h3>
             <p class="text-[10px] lg:text-xs text-gray-400 mt-1">Lagu terhapus otomatis jika selesai dinyanyikan.</p>
         </div>
-        
         <div class="flex-1 overflow-y-auto p-2" id="playlistContainer">
             <div class="text-center text-gray-500 text-sm mt-5">Playlist kosong.</div>
         </div>
     </div>
 
-    <!-- ================= MODAL KUSTOM ================= -->
+    <!-- MODAL -->
     <div id="customAlert" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[100] hidden opacity-0 transition-opacity duration-300 p-4">
         <div class="bg-gray-800 border border-gray-700 rounded-lg p-5 lg:p-6 w-full max-w-sm shadow-2xl transform scale-95 transition-transform duration-300" id="customAlertBox">
             <h3 class="text-lg lg:text-xl font-bold text-red-500 mb-2">Peringatan</h3>
@@ -143,7 +148,6 @@
             <button onclick="closeAlert()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded font-bold transition-colors">OK</button>
         </div>
     </div>
-
     <div id="customConfirm" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[100] hidden opacity-0 transition-opacity duration-300 p-4">
         <div class="bg-gray-800 border border-gray-700 rounded-lg p-5 lg:p-6 w-full max-w-sm shadow-2xl transform scale-95 transition-transform duration-300" id="customConfirmBox">
             <h3 class="text-lg lg:text-xl font-bold text-yellow-500 mb-2">Konfirmasi</h3>
