@@ -1,18 +1,19 @@
 // =====================================================================
 // 1. STATE GLOBAL & VARIABEL DOKUMEN HTML (DOM)
 // =====================================================================
-// GANTI DENGAN URL GOOGLE APPS SCRIPT ANDA
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyfPBUp6nONa9lSgKVYfYmBzUFjoX8Hz-pj80GnbEWugdHPxsKiHQvBuTTutPvNzm-e6g/exec';
- 
+
+// PASTE URL DARI GOOGLE APPS SCRIPT ANDA DI SINI
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyfPBUp6nONa9lSgKVYfYmBzUFjoX8Hz-pj80GnbEWugdHPxsKiHQvBuTTutPvNzm-e6g/exec'; 
+
 let allLocalSongs = []; 
-let allGeneralSongs = []; // Wadah untuk lagu dari Google Sheets
+let allGeneralSongs = []; 
 let playlist = [];      
 let currentIndex = 0; 
 let currentSourceTab = 'local'; 
 
 const searchInput = document.getElementById('searchInput');
 const searchYtInput = document.getElementById('searchYtInput');
-const searchGeneralInput = document.getElementById('searchGeneralInput'); // Pencarian General
+const searchGeneralInput = document.getElementById('searchGeneralInput'); 
 
 const songList = document.getElementById('songList');
 const ytSavedList = document.getElementById('ytSavedList');
@@ -32,7 +33,7 @@ let audioInitialized = false;
 let ytPlayer; 
 
 window.onload = () => {
-    fetchYtSaved(); // Muat memori Youtube saat halaman dibuka
+    fetchYtSaved(); 
 };
 
 // =====================================================================
@@ -84,7 +85,7 @@ function addToPlaylistByIndex(globalIndex) { addToPlaylist(allLocalSongs[globalI
 
 
 // =====================================================================
-// 3. FUNGSI YOUTUBE (LOCALSTORAGE BROWSER)
+// 3. FUNGSI YOUTUBE (LOCALSTORAGE & SYNC SPREADSHEET AUTOMATIS)
 // =====================================================================
 searchYtInput.addEventListener('keyup', (e) => {
     const keyword = e.target.value.toLowerCase();
@@ -132,10 +133,30 @@ function saveAndAddYoutube() {
     const title = document.getElementById('ytTitleInput').value.trim(); 
     const url = document.getElementById('ytLinkInput').value.trim();    
     const videoId = extractVideoID(url);                                
-    if (!title || !videoId) { showAlert("Maaf, Judul dan Link YouTube valid wajib diisi dengan benar!"); return; }
+    
+    if (!title || !videoId) { 
+        showAlert("Maaf, Judul dan Link YouTube valid wajib diisi dengan benar!"); 
+        return; 
+    }
+
+    // 1. Simpan ke LocalStorage Browser
     let saved = JSON.parse(localStorage.getItem('ytHistory')) || [];
     saved.push({ title: title, videoId: videoId });
     localStorage.setItem('ytHistory', JSON.stringify(saved));
+    
+    // 2. FITUR BARU: Tembak data ke Google Sheets (Backup / Crowdsourcing Database)
+    if (GAS_URL && GAS_URL !== 'ISI_DENGAN_URL_WEB_APP_ANDA_DISINI') {
+        // Menggunakan mode text/plain untuk melewati blokir CORS Preflight dari Google
+        fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                titleSinger: title,
+                link: url
+            })
+        }).catch(err => console.error("Gagal mengirim data ke spreadsheet:", err));
+    }
+
+    // 3. Masukkan ke Playlist dan Refresh UI
     addFromYtHistory(title, videoId);
     document.getElementById('ytTitleInput').value = '';
     document.getElementById('ytLinkInput').value = '';
@@ -151,12 +172,16 @@ function deleteYtHistory(videoId) {
     });
 }
 
+function extractVideoID(url) {
+    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = url.match(regex);
+    return match ? match[1] : null; 
+}
+
 
 // =====================================================================
 // 4. FUNGSI GENERAL (SINKRONISASI GOOGLE SHEETS)
 // =====================================================================
-
-// Pencarian Lokal di dalam array General
 searchGeneralInput.addEventListener('keyup', (e) => {
     const keyword = e.target.value.toLowerCase();
     const filteredGeneral = allGeneralSongs.filter(song => 
@@ -165,14 +190,13 @@ searchGeneralInput.addEventListener('keyup', (e) => {
     renderGeneralList(filteredGeneral);
 });
 
-// Menarik data online dari Google Apps Script
 function fetchGeneralSongs() {
     if (GAS_URL === 'ISI_DENGAN_URL_WEB_APP_ANDA_DISINI') {
         showAlert("Anda belum memasukkan URL Web App Google Apps Script ke dalam file javascript.js");
         return;
     }
 
-    generalListContainer.innerHTML = `<div class="text-blue-400 text-center text-sm mt-5">🔄 Mengunduh data dari Cloud...</div>`;
+    generalListContainer.innerHTML = `<div class="text-blue-400 text-center text-sm mt-5">🔄 Mengunduh data dari Spreadsheet...</div>`;
     
     fetch(GAS_URL)
         .then(res => res.json())
@@ -196,14 +220,12 @@ function renderGeneralList(songs) {
         const div = document.createElement('div');
         div.className = "bg-gray-700 hover:bg-gray-600 rounded p-2 flex justify-between items-center transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5";
         
-        // Membersihkan judul dari petik HTML
         const safeTitle = song.titleSinger.replace(/'/g, "\\'").replace(/"/g, '&quot;');
         
-        // Tidak ada tombol hapus untuk General (Hanya lewat excel lgsg)
         div.innerHTML = `
             <div class="overflow-hidden flex-1 cursor-pointer" title="${song.titleSinger}">
                 <div class="font-bold text-sm lg:text-base truncate text-blue-300">${song.titleSinger}</div>
-                <div class="text-[10px] lg:text-xs text-gray-400 truncate">Sistem Cloud (Spreadsheet)</div>
+                <div class="text-[10px] lg:text-xs text-gray-400 truncate">Sistem Cloud Spreadsheet</div>
             </div>
             <div class="flex gap-1 ml-2 shrink-0">
                 <button class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded shadow hover:scale-105 transition-transform duration-200" onclick="addFromGeneral('${safeTitle}', '${song.link}')">
@@ -221,7 +243,6 @@ function addFromGeneral(title, url) {
         showAlert(`Link YouTube tidak valid pada lagu: ${title}`);
         return;
     }
-    // Masukkan ke Playlist dengan source: 'general'
     addToPlaylist({ title: title, singer: "Online (General)", filename: videoId, source: 'general' });
 }
 
@@ -229,12 +250,6 @@ function addFromGeneral(title, url) {
 // =====================================================================
 // 5. NAVIGASI TAB (LOCAL, YOUTUBE, GENERAL)
 // =====================================================================
-function extractVideoID(url) {
-    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-    const match = url.match(regex);
-    return match ? match[1] : null; 
-}
-
 function addFromYtHistory(title, videoId) {
     addToPlaylist({ title: title, singer: "YouTube Video", filename: videoId, source: 'youtube' });
 }
@@ -252,26 +267,22 @@ function setBtnStyle(btn, isActive) {
 function switchSource(source) {
     currentSourceTab = source; 
     
-    // Matikan semua tombol
     setBtnStyle(document.getElementById('btnLocal'), false);
     setBtnStyle(document.getElementById('btnYT'), false);
     setBtnStyle(document.getElementById('btnGeneral'), false);
 
-    // Sembunyikan semua konten input (Header Kiri)
     document.getElementById('localInputContainer').classList.add('hidden');
     document.getElementById('ytInputContainer').classList.add('hidden');
     document.getElementById('ytInputContainer').classList.remove('flex');
     document.getElementById('generalInputContainer').classList.add('hidden');
     document.getElementById('generalInputContainer').classList.remove('flex');
 
-    // Sembunyikan semua daftar List
     document.getElementById('songList').classList.add('hidden');
     document.getElementById('ytSavedList').classList.add('hidden');
     document.getElementById('ytSavedList').classList.remove('flex');
     document.getElementById('generalSavedList').classList.add('hidden');
     document.getElementById('generalSavedList').classList.remove('flex');
 
-    // Nyalakan yang spesifik dipencet
     if (source === 'local') {
         setBtnStyle(document.getElementById('btnLocal'), true);
         document.getElementById('localInputContainer').classList.remove('hidden');
@@ -292,7 +303,6 @@ function switchSource(source) {
         document.getElementById('generalInputContainer').classList.add('flex');
         document.getElementById('generalSavedList').classList.remove('hidden');
         document.getElementById('generalSavedList').classList.add('flex');
-        // Jika data masih kosong, tembak ke Cloud otomatis
         if(allGeneralSongs.length === 0) fetchGeneralSongs();
     }
 }
@@ -444,11 +454,10 @@ function playSong(index) {
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
         localPlayer.play();
     } 
-    // YouTube ATAU General (Spreadsheet) akan ditangani oleh player API YouTube yang sama
     else if (song.source === 'youtube' || song.source === 'general') {
         localPlayer.classList.add('hidden'); localPlayer.pause(); ytWrapper.classList.remove('hidden');
         if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
-            ytPlayer.loadVideoById(song.filename); // filename disini berisi VideoID
+            ytPlayer.loadVideoById(song.filename); 
         } else {
             ytPlayer = new YT.Player('ytPlayerContainer', {
                 height: '100%', width: '100%', videoId: song.filename,
